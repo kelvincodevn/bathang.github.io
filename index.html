@@ -351,6 +351,43 @@
         .info-line {
             margin-bottom: 4px;
         }
+
+        /* ================= SEARCH RESULT COLOR CODING ================= */
+
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .phase-order       { background-color: #1976d2; } /* xanh dương */
+        .phase-delivery    { background-color: #f57c00; } /* cam */
+        .phase-billing     { background-color: #7b1fa2; } /* tím */
+        .phase-accounting  { background-color: #2e7d32; } /* xanh lá */
+
+        /* STATUS BADGE */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .status-complete      { background-color: #2e7d32; }  /* xanh lá */
+        .status-inprocess     { background-color: #0277bd; }  /* xanh dương nhạt */
+        .status-warning       { background-color: #fbc02d; color: #000; }  /* vàng */
+        .status-error         { background-color: #d32f2f; }   /* đỏ */
+        .status-released      { background-color: #6a1b9a; }   /* tím */
+        .status-cleared       { background-color: #009688; }   /* teal */
+
+
     </style>
 </head>
 <body>
@@ -1044,97 +1081,122 @@
 
     // ================= SEARCH RESULT RENDER (SCREEN 0300) =================
     function renderSearchResults() {
-        const salesOrg   = document.getElementById('sel-sales-org').value || '-';
-        const compCode   = document.getElementById('sel-comp-code').value || '-';
-        const orderNo    = document.getElementById('sel-order-no').value || '-';
-        const deliveryNo = document.getElementById('sel-delivery-no').value || '-';
-        const billingNo  = document.getElementById('sel-billing-no').value || '-';
+    const salesOrg   = document.getElementById('sel-sales-org').value || '-';
+    const compCode   = document.getElementById('sel-comp-code').value || '-';
+    const orderNo    = document.getElementById('sel-order-no').value || '-';
+    const deliveryNo = document.getElementById('sel-delivery-no').value || '-';
+    const billingNo  = document.getElementById('sel-billing-no').value || '-';
 
-        const summaryDiv = document.getElementById('search-summary');
-        summaryDiv.innerHTML = `
-            <div class="info-line"><strong>Organization Data:</strong> Sales Org = ${salesOrg}, Company Code = ${compCode}</div>
-            <div class="info-line"><strong>Document Information:</strong> SO = ${orderNo}, Delivery = ${deliveryNo}, Billing = ${billingNo}</div>
-            <div class="info-line" style="margin-top:4px;">(Mock) Kết quả minh họa cho việc quản lý Order-to-Cash trên cùng một màn hình.</div>
+    const summaryDiv = document.getElementById('search-summary');
+    summaryDiv.innerHTML = `
+        <div class="info-line"><strong>Organization Data:</strong> Sales Org = ${salesOrg}, Company Code = ${compCode}</div>
+        <div class="info-line"><strong>Document Information:</strong> SO = ${orderNo}, Delivery = ${deliveryNo}, Billing = ${billingNo}</div>
+        <div class="info-line" style="margin-top:4px;">(Mock) Kết quả minh họa cho việc quản lý Order-to-Cash.</div>
+    `;
+
+    const resultTable = document.getElementById('search-result-table');
+
+    /* ================= MOCK DATA + ICON + COLOR ================= */
+    const data = [
+        {
+            phase: 'Order processing',
+            icon: '📄',
+            phaseClass: 'phase-order',
+            docType: 'Sales Order',
+            docNo: '80000001',
+            refDoc: '',
+            status: 'Delivery created',
+            statusClass: 'status-inprocess',
+            amount: '10,000,000 VND',
+            createdBy: 'TRAMNNB8',
+            date: '2025-11-14'
+        },
+        {
+            phase: 'Delivery processing',
+            icon: '🚚',
+            phaseClass: 'phase-delivery',
+            docType: 'Delivery',
+            docNo: '80050001',
+            refDoc: '80000001',
+            status: 'PGI posted',
+            statusClass: 'status-complete',
+            amount: '10,000,000 VND',
+            createdBy: 'SD_USER',
+            date: '2025-11-15'
+        },
+        {
+            phase: 'Invoice processing',
+            icon: '🧾',
+            phaseClass: 'phase-billing',
+            docType: 'Billing',
+            docNo: '90000001',
+            refDoc: '80050001',
+            status: 'Released to Accounting',
+            statusClass: 'status-released',
+            amount: '10,000,000 VND',
+            createdBy: 'SD_BILL',
+            date: '2025-11-16'
+        },
+        {
+            phase: 'Accounting',
+            icon: '💰',
+            phaseClass: 'phase-accounting',
+            docType: 'Accounting Doc',
+            docNo: '140000001',
+            refDoc: '90000001',
+            status: 'Cleared',
+            statusClass: 'status-cleared',
+            amount: '10,000,000 VND',
+            createdBy: 'FI_USER',
+            date: '2025-11-17'
+        }
+    ];
+
+    document.getElementById('search-count').innerText = data.length;
+
+    const headers = [
+        'Process Phase',
+        'Document Type',
+        'Document No.',
+        'Reference Doc.',
+        'Status',
+        'Amount',
+        'Created By',
+        'Date'
+    ];
+
+    resultTable.innerHTML = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+
+    let bodyHTML = '';
+    data.forEach(row => {
+        bodyHTML += `
+            <tr>
+                <td>
+                    <span class="phase-badge ${row.phaseClass}">
+                        ${row.icon} ${row.phase}
+                    </span>
+                </td>
+
+                <td>${row.docType}</td>
+                <td>${row.docNo}</td>
+                <td>${row.refDoc}</td>
+
+                <td>
+                    <span class="status-badge ${row.statusClass}">
+                        ${row.status}
+                    </span>
+                </td>
+
+                <td>${row.amount}</td>
+                <td>${row.createdBy}</td>
+                <td>${row.date}</td>
+            </tr>
         `;
+    });
 
-        const resultTable = document.getElementById('search-result-table');
+    resultTable.innerHTML += `<tbody>${bodyHTML}</tbody>`;
+}
 
-        const data = [
-            {
-                phase: 'Order processing',
-                docType: 'Sales Order',
-                docNo: '80000001',
-                refDoc: '',
-                status: 'Delivery created',
-                amount: '10,000,000 VND',
-                createdBy: 'TRAMNNB8',
-                date: '2025-11-14'
-            },
-            {
-                phase: 'Delivery processing',
-                docType: 'Delivery',
-                docNo: '80050001',
-                refDoc: '80000001',
-                status: 'PGI posted',
-                amount: '10,000,000 VND',
-                createdBy: 'SD_USER',
-                date: '2025-11-15'
-            },
-            {
-                phase: 'Invoice processing',
-                docType: 'Billing',
-                docNo: '90000001',
-                refDoc: '80050001',
-                status: 'Released to Accounting',
-                amount: '10,000,000 VND',
-                createdBy: 'SD_BILL',
-                date: '2025-11-16'
-            },
-            {
-                phase: 'Accounting',
-                docType: 'Accounting Doc',
-                docNo: '140000001',
-                refDoc: '90000001',
-                status: 'Cleared',
-                amount: '10,000,000 VND',
-                createdBy: 'FI_USER',
-                date: '2025-11-17'
-            }
-        ];
-
-        document.getElementById('search-count').innerText = data.length;
-
-        const headers = [
-            'Process Phase',
-            'Document Type',
-            'Document No.',
-            'Reference Doc.',
-            'Status',
-            'Amount',
-            'Created By',
-            'Date'
-        ];
-
-        resultTable.innerHTML =
-            `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
-
-        let bodyHTML = '';
-        data.forEach(row => {
-            bodyHTML += `
-                <tr>
-                    <td>${row.phase}</td>
-                    <td>${row.docType}</td>
-                    <td>${row.docNo}</td>
-                    <td>${row.refDoc}</td>
-                    <td>${row.status}</td>
-                    <td>${row.amount}</td>
-                    <td>${row.createdBy}</td>
-                    <td>${row.date}</td>
-                </tr>
-            `;
-        });
-        resultTable.innerHTML += `<tbody>${bodyHTML}</tbody>`;
-    }
 </script>
 </body>
-                                                        </html>
+</html>
